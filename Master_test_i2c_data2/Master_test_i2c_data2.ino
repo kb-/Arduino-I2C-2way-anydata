@@ -7,7 +7,7 @@
 #define CTRL_I2C_ADDR 12
 
 struct __attribute__ ((packed)) ctrlcomdata {
-	char id='Y';
+	char id='E';
 	char action='e';
 	int32_t data;
 };
@@ -38,7 +38,7 @@ void loop(){
 
   if (Wire.requestFrom(CTRL_I2C_ADDR, sizeof(ctrlcomdata))){
     I2C_readAnything(data_from_slave);
-    if(data_from_slave.id=='Y'){//empty or real data is flowing in continously, only keep real data
+    if(data_from_slave.id=='E'){//empty or real data is flowing in continously, only keep real data
       Serial.println (data_from_slave.id);
       Serial.println (data_from_slave.data);
     }

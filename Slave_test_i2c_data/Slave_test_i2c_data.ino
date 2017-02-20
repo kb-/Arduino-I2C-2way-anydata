@@ -43,12 +43,24 @@ void receiveEvent(int howMany) {
   data_ready = true;
 }
 
+bool odd = true;
+
 void requestEvent(){
   static uint32_t t=0;
-  if ((millis()-t)>2000)//delay, without delay()
+  if ((millis()-t)>1000&&odd)//delay, without delay()
   {
+    odd = false;
+//    t=millis();
+    data_to_Master.id = 'E';
+    data_to_Master.data = millis();
+    Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
+  }
+  if ((millis()-t)>2000&&!odd)//delay, without delay()
+  {
+    odd = true;
     t=millis();
-    data_to_Master.data = 2000;
+    data_to_Master.id = 'Y';
+    data_to_Master.data = millis();
     Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
   }
 }
