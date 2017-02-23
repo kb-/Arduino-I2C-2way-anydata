@@ -36,7 +36,7 @@ void loop(){
   	Wire.endTransmission (true);
   }
 
-  if (Wire.requestFrom(CTRL_I2C_ADDR, sizeof(ctrlcomdata))){
+  if (sizeof(ctrlcomdata)==Wire.requestFrom(CTRL_I2C_ADDR, sizeof(ctrlcomdata))){
     I2C_readAnything(data_from_slave);
     if(data_from_slave.id=='Y'){//empty or real data is flowing in continously, only keep real data
       Serial.println (data_from_slave.id);
