@@ -30,8 +30,8 @@ void setup()
 }
 
 void loop(){
-  if(data_ready){//Serial.print isn't recommanded in receiveEvent...
-    Serial.println (data_from_Master.id);
+  if(data_ready&&data_from_Master.id=='Y'){//fake data flowing in non stop, have to filter what's coming in for some reason (SAMD to SAMD only, Mega2560 slave ok)
+    Serial.println (data_from_Master.id);//Serial.print isn't recommanded in receiveEvent...
     Serial.println (data_from_Master.action);
     Serial.println (data_from_Master.data);
     data_ready = false;
