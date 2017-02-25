@@ -7,14 +7,14 @@
 #define CTRL_I2C_ADDR 12
 
 struct __attribute__ ((packed)) ctrlcomdata {
-	char id='X';
-	char action='e';
-	int32_t data;
+  char id='X';
+  char action='e';
+  int32_t data;
 };
 
-ctrlcomdata data_from_Master;
-ctrlcomdata data_to_Master;
-bool data_ready=false;
+volatile ctrlcomdata data_from_Master;
+volatile ctrlcomdata data_to_Master;
+volatile bool data_ready=false;
 
 //The setup function is called once at startup of the sketch
 void setup()
@@ -30,7 +30,7 @@ void setup()
 }
 
 void loop(){
-  if(data_ready){//Serial.print isn't recommanded in receiveEvent...
+  if(data_ready){
     Serial.println (data_from_Master.id);
     Serial.println (data_from_Master.action);
     Serial.println (data_from_Master.data);
@@ -39,29 +39,14 @@ void loop(){
 }
 
 void receiveEvent(int howMany) {
-  I2C_readAnything(data_from_Master);
-  data_ready = true;
+  if(howMany==sizeof(ctrlcomdata)){//requestEvent is confused with data without this test
+    I2C_readAnything(data_from_Master);
+    data_ready = true;
+  }
 }
-
-bool odd = true;
 
 void requestEvent(){
   static uint32_t t=0;
-  if ((millis()-t)>1000&&odd)//delay, without delay()
-  {
-    odd = false;
-//    t=millis();
-    data_to_Master.id = 'E';
     data_to_Master.data = millis();
     Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
-  }
-  if ((millis()-t)>2000&&!odd)//delay, without delay()
-  {
-    odd = true;
-    t=millis();
-    data_to_Master.id = 'Y';
-    data_to_Master.data = millis();
-    Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
-  }
 }
-
