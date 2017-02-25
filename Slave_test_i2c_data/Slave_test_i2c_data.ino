@@ -6,8 +6,14 @@
 
 #define CTRL_I2C_ADDR 12
 
-volatile char data_from_Master;
-volatile char data_to_Master;
+struct __attribute__ ((packed)) ctrlcomdata {
+  char id='X';
+  char action='e';
+  int32_t data;
+};
+
+volatile ctrlcomdata data_from_Master;
+volatile ctrlcomdata data_to_Master;
 volatile bool data_ready=false;
 
 //The setup function is called once at startup of the sketch
@@ -25,21 +31,22 @@ void setup()
 
 void loop(){
   if(data_ready){
-    Serial.println (data_from_Master);//Serial.print isn't recommanded in receiveEvent...
+    Serial.println (data_from_Master.id);
+    Serial.println (data_from_Master.action);
+    Serial.println (data_from_Master.data);
     data_ready = false;
   }
 }
 
 void receiveEvent(int howMany) {
-  if(howMany==1){//requestEvent is confused with data without this test
-    data_from_Master = Wire.read();
+  if(howMany==sizeof(ctrlcomdata)){//requestEvent is confused with data without this test
+    I2C_readAnything(data_from_Master);
     data_ready = true;
   }
 }
 
 void requestEvent(){
   static uint32_t t=0;
-  data_to_Master = 's';
-  Wire.write (data_to_Master);
+    data_to_Master.data = 2000;
+    Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
 }
-
