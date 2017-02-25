@@ -31,17 +31,15 @@ void loop(){
 }
 
 void receiveEvent(int howMany) {
-  data_from_Master = Wire.read();
-  data_ready = true;
+  if(howMany==1){//requestEvent is confused with data without this test
+    data_from_Master = Wire.read();
+    data_ready = true;
+  }
 }
 
 void requestEvent(){
   static uint32_t t=0;
-  if ((millis()-t)>2000)//delay, without delay()
-  {
-    t=millis();
-    data_to_Master = 's';
-    Wire.write (data_to_Master);
-  }
+  data_to_Master = 's';
+  Wire.write (data_to_Master);
 }
 
