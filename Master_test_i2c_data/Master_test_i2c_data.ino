@@ -30,9 +30,9 @@ void loop(){
   	Wire.endTransmission ();
   }
   delay(1);//needed on SAMD Master only, for some reason only fake data is transfered otherwise (Mega2560 slave ok)
-  if (Wire.requestFrom(CTRL_I2C_ADDR, sizeof(data_to_slave))){
-    data_from_slave = Wire.read();
-    Serial.println (data_from_slave);
-  }
+//  if (Wire.requestFrom(CTRL_I2C_ADDR, sizeof(data_to_slave))){
+//    data_from_slave = Wire.read();
+//    Serial.println (data_from_slave);
+//  }
   //delay(1);
 }
