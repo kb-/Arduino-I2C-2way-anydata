@@ -7,12 +7,13 @@
 #define CTRL_I2C_ADDR 12
 
 struct __attribute__ ((packed)) ctrlcomdata {
-	char id='Y';
-	char action='e';
-	int32_t data;
+  char id='Y';
+  char action='e';
+  int32_t data;
 };
 
 ctrlcomdata data_from_slave;
+ctrlcomdata data_to_slave;
 
 void setup(){
   Serial.begin(115200);  // start serial for output
@@ -25,23 +26,24 @@ void setup(){
 }
 
 void loop(){
-	ctrlcomdata data;
-	data.data = 1500;
+	data_to_slave.data = 1500;
   static uint32_t t=0;
-  if ((millis()-t)>2000)//delay, without delay()
-  {
+  static uint32_t t1=0;
+  if ((millis()-t)>20)//delay, without delay()
+  {                           
     t=millis();
   	Wire.beginTransmission (CTRL_I2C_ADDR);
-  	Wire.write ((uint8_t*) &data, sizeof(ctrlcomdata));
+  	Wire.write ((uint8_t*) &data_to_slave, sizeof(ctrlcomdata));
   	Wire.endTransmission ();
   }
-  delay(1);//needed on SAMD Master only, for some reason only fake data is transfered otherwise (Mega2560 slave ok)
-  if (Wire.requestFrom(CTRL_I2C_ADDR, sizeof(ctrlcomdata))){
+  if ((millis()-t1)>20)//delay, without delay()
+  {
+    Wire.requestFrom(CTRL_I2C_ADDR, sizeof(data_to_slave));
+    t1=millis();
     I2C_readAnything(data_from_slave);
-    if(data_from_slave.id=='X'){//fake data flowing in non stop, have to filter what's coming in for some reason (tested with SAMD slave only)
-      Serial.println (data_from_slave.id);
-      Serial.println (data_from_slave.data);
-    }
+    Serial.println (data_from_slave.id);
+    Serial.println (data_from_slave.action);
+    Serial.println (data_from_slave.data);
   }
   //delay(1);
 }
