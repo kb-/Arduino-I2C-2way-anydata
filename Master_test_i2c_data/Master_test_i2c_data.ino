@@ -22,7 +22,7 @@ void setup(){
   }
   Serial.println ("Master connected");
 	Wire.begin();        // join i2c bus
-	Wire.setClock(800000);
+	Wire.setClock(100000);
 }
 
 void loop(){
