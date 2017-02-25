@@ -38,9 +38,11 @@ void loop(){
   }
   if ((millis()-t1)>2000)//delay, without delay()
   {
-    Wire.requestFrom(CTRL_I2C_ADDR, sizeof(data_to_slave));
+    Wire.requestFrom(CTRL_I2C_ADDR, 2*sizeof(data_to_slave));
     t1=millis();
-    I2C_readAnything(data_from_slave);
+    do{
+      I2C_readAnything(data_from_slave);
+    }while(data_from_slave.action!='Z');//reading till the expected data is delivered
     Serial.println (data_from_slave.id);
     Serial.println (data_from_slave.action);
     Serial.println (data_from_slave.data);
