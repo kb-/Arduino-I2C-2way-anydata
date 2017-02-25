@@ -12,8 +12,8 @@ struct __attribute__ ((packed)) ctrlcomdata {
 	int32_t data;
 };
 
-ctrlcomdata data_from_Master;
-ctrlcomdata data_to_Master;
+volatile ctrlcomdata data_from_Master;
+volatile ctrlcomdata data_to_Master;
 bool data_ready=false;
 
 //The setup function is called once at startup of the sketch
@@ -49,7 +49,8 @@ void requestEvent(){
   {
     t=millis();
     data_to_Master.data = 2000;
-    Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
+//    Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
+    I2C_writeAnything (data_to_Master);
   }
 }
 
