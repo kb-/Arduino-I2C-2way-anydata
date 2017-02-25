@@ -8,7 +8,7 @@
 
 volatile char data_from_Master;
 volatile char data_to_Master;
-bool data_ready=false;
+volatile bool data_ready=false;
 
 //The setup function is called once at startup of the sketch
 void setup()
