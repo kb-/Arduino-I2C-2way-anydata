@@ -38,6 +38,7 @@ void loop(){
   delay(1);//needed on SAMD Master only, for some reason only fake data is transfered otherwise (Mega2560 slave ok)
   if (Wire.requestFrom(CTRL_I2C_ADDR, sizeof(ctrlcomdata))){
     I2C_readAnything(data_from_slave);
+    if(data_from_slave.id=='X'){//fake data flowing in non stop, have to filter what's coming in for some reason (tested with SAMD slave only)
       Serial.println (data_from_slave.id);
       Serial.println (data_from_slave.data);
     }
