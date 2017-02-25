@@ -6,14 +6,8 @@
 
 #define CTRL_I2C_ADDR 12
 
-struct __attribute__ ((packed)) ctrlcomdata {
-	char id='X';
-	char action='e';
-	int32_t data;
-};
-
-volatile ctrlcomdata data_from_Master;
-volatile ctrlcomdata data_to_Master;
+volatile char data_from_Master;
+volatile char data_to_Master;
 bool data_ready=false;
 
 //The setup function is called once at startup of the sketch
@@ -30,16 +24,14 @@ void setup()
 }
 
 void loop(){
-  if(data_ready&&data_from_Master.id=='Y'){//fake data flowing in non stop, have to filter what's coming in for some reason (SAMD to SAMD only, Mega2560 slave ok)
-    Serial.println (data_from_Master.id);//Serial.print isn't recommanded in receiveEvent...
-    Serial.println (data_from_Master.action);
-    Serial.println (data_from_Master.data);
+  if(data_ready){
+    Serial.println (data_from_Master);//Serial.print isn't recommanded in receiveEvent...
     data_ready = false;
   }
 }
 
 void receiveEvent(int howMany) {
-  I2C_readAnything(data_from_Master);
+  data_from_Master = Wire.read();
   data_ready = true;
 }
 
@@ -48,9 +40,8 @@ void requestEvent(){
   if ((millis()-t)>2000)//delay, without delay()
   {
     t=millis();
-    data_to_Master.data = 2000;
-//    Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
-    I2C_writeAnything (data_to_Master);
+    data_to_Master = 's';
+    Wire.write (data_to_Master);
   }
 }
 
