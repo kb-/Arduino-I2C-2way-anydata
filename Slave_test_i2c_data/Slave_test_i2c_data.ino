@@ -53,9 +53,12 @@ void loop(){
   if (stringComplete) {
     if(inputString=="r\r"){
       Serial.print(ok1);
-      Serial.println (" Valid transfers m1");
+      Serial.println (" Valid transfers from m1");
       Serial.print(ok2);
-      Serial.println (" Valid transfers m2");      
+      Serial.println (" Valid transfers from m2"); 
+      Serial.println (data_from_Master.id);
+      Serial.println (data_from_Master.action);
+      Serial.println (data_from_Master.data);    
     }
     // clear the string:
     inputString = "";
@@ -72,12 +75,12 @@ void receiveEvent(int howMany) {
 
 void requestEvent(){
   static uint32_t t=0;
-    data_to_Master.data = 2500;
-    data_to_Master.action = 'Z';
-    Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
-    data_to_Master.data = 3500;
-    data_to_Master.action = 'Y';
-    Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));//we don't know which master is calling. Sending data fo both.
+  data_to_Master.data = 2500;
+  data_to_Master.action = 'Z';
+  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
+  data_to_Master.data = 3500;
+  data_to_Master.action = 'Y';
+  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));//we don't know which master is calling. Sending data fo both.
 }
 
 

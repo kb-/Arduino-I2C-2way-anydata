@@ -5,9 +5,9 @@
 #include "I2C_Anything.h"
 
 #define CTRL_I2C_ADDR 12
-#define DT 10
-#define CNT 10000
-#define READ_LIM 10
+#define DT 11
+#define CNT 40000
+#define READ_LIM 4
 
 struct __attribute__ ((packed)) ctrlcomdata {
   char id='Z';
@@ -15,13 +15,15 @@ struct __attribute__ ((packed)) ctrlcomdata {
   int32_t data;
 };
 
-int n1=0;
-int n2=0;
+uint32_t n1=0;
+uint32_t n2=0;
 uint32_t ok=0;
 String inputString = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
 
-int read_cnt = 0;
+uint8_t read_cnt = 0;
+uint8_t read_cnt1 = 0;
+uint8_t status;
 
 ctrlcomdata data_from_slave;
 ctrlcomdata data_to_slave;
@@ -33,7 +35,7 @@ void setup(){
   }
   Serial.println ("Master connected");
 	Wire.begin();        // join i2c bus
-	Wire.setClock(100000);
+	Wire.setClock(400000);
   inputString.reserve(2);
 }
 
@@ -45,8 +47,16 @@ void loop(){
   {                           
     t=millis();
   	Wire.beginTransmission (CTRL_I2C_ADDR);
-  	Wire.write ((uint8_t*) &data_to_slave, sizeof(ctrlcomdata));
-  	Wire.endTransmission ();
+    I2C_singleWriteAnything(data_to_slave);
+  	//Wire.write ((uint8_t*) &data_to_slave, sizeof(ctrlcomdata));
+    do{
+      status = Wire.endTransmission ();
+      if(read_cnt1==READ_LIM)//give up to not hang code
+      {
+        read_cnt1 = 0;
+        break;
+      }
+    }while(status==2||status==3);//retry on collision
     n1++;
   }
   if ((millis()-t1)>DT&&n2<CNT)//delay, without delay()
@@ -57,7 +67,7 @@ void loop(){
       do{
         I2C_readAnything(data_from_slave);
         read_cnt++;
-        if(read_cnt==READ_LIM)
+        if(read_cnt==READ_LIM)//still need this?
         {
           read_cnt = 0;
           break;
@@ -77,7 +87,12 @@ void loop(){
   if (stringComplete) {
     if(inputString=="r\r"){
       Serial.print(ok);
+      Serial.print('/');
+      Serial.print(CNT);
       Serial.println (" Valid transfers");
+      Serial.println (data_from_slave.id);
+      Serial.println (data_from_slave.action);
+      Serial.println (data_from_slave.data);
     }
     // clear the string:
     inputString = "";
