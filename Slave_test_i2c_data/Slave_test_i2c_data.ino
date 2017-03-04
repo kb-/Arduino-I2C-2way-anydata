@@ -39,7 +39,7 @@ void loop(){
 }
 
 void receiveEvent(int howMany) {
-  if(true||howMany==sizeof(ctrlcomdata)){//requestEvent is confused with data without this test
+  if(howMany==sizeof(ctrlcomdata)){//requestEvent is confused with data without this test
     I2C_readAnything(data_from_Master);
     data_ready = true;
   }

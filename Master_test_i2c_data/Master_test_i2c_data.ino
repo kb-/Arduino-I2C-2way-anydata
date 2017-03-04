@@ -32,7 +32,7 @@ void loop(){
 	data_to_slave.data = 1500;
   static uint32_t t=0;
   static uint32_t t1=0;
-  if ((millis()-t)>1&&n1<10)//delay, without delay()
+  if ((millis()-t)>1&&n1<10000)//delay, without delay()
   {                           
     t=millis();
   	Wire.beginTransmission (CTRL_I2C_ADDR);
@@ -40,7 +40,7 @@ void loop(){
   	Wire.endTransmission ();
     n1++;
   }
-  if ((millis()-t1)>1&&n2<10)//delay, without delay()
+  if ((millis()-t1)>1&&n2<10000)//delay, without delay()
   {
     Wire.requestFrom(CTRL_I2C_ADDR, sizeof(data_to_slave));
     t1=millis();
