@@ -25,18 +25,22 @@ void setup(){
 	Wire.setClock(800000);
 }
 
+int n1=0;
+int n2=0;
+
 void loop(){
 	data_to_slave.data = 1500;
   static uint32_t t=0;
   static uint32_t t1=0;
-  if ((millis()-t)>20)//delay, without delay()
+  if ((millis()-t)>1&&n1<10)//delay, without delay()
   {                           
     t=millis();
   	Wire.beginTransmission (CTRL_I2C_ADDR);
   	Wire.write ((uint8_t*) &data_to_slave, sizeof(ctrlcomdata));
   	Wire.endTransmission ();
+    n1++;
   }
-  if ((millis()-t1)>20)//delay, without delay()
+  if ((millis()-t1)>1&&n2<10)//delay, without delay()
   {
     Wire.requestFrom(CTRL_I2C_ADDR, sizeof(data_to_slave));
     t1=millis();
@@ -44,6 +48,7 @@ void loop(){
     Serial.println (data_from_slave.id);
     Serial.println (data_from_slave.action);
     Serial.println (data_from_slave.data);
+    n2++;
   }
   //delay(1);
 }
