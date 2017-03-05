@@ -56,9 +56,9 @@ void loop(){
       Serial.println (" Valid transfers from m1");
       Serial.print(ok2);
       Serial.println (" Valid transfers from m2"); 
-      Serial.println (data_from_Master.id);
-      Serial.println (data_from_Master.action);
-      Serial.println (data_from_Master.data);    
+//      Serial.println (data_from_Master.id);
+//      Serial.println (data_from_Master.action);
+//      Serial.println (data_from_Master.data);    
     }
     // clear the string:
     inputString = "";

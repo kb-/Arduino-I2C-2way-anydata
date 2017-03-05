@@ -5,9 +5,9 @@
 #include "I2C_Anything.h"
 
 #define CTRL_I2C_ADDR 12
-#define DT 11
-#define CNT 40000
-#define READ_LIM 4
+#define DT 10
+#define CNT 100000
+#define READ_LIM 10
 
 struct __attribute__ ((packed)) ctrlcomdata {
   char id='Z';
@@ -18,6 +18,8 @@ struct __attribute__ ((packed)) ctrlcomdata {
 uint32_t n1=0;
 uint32_t n2=0;
 uint32_t ok=0;
+uint32_t read_collisions = 0;
+uint32_t write_collisions = 0;
 String inputString = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
 
@@ -56,6 +58,9 @@ void loop(){
         read_cnt1 = 0;
         break;
       }
+      if(status==2||status==3){
+        write_collisions++;
+      }
     }while(status==2||status==3);//retry on collision
     n1++;
   }
@@ -63,7 +68,6 @@ void loop(){
   {
     if(Wire.requestFrom(CTRL_I2C_ADDR, 2*sizeof(data_to_slave))==2*sizeof(data_to_slave))
     {
-      t1=millis();
       do{
         I2C_readAnything(data_from_slave);
         read_cnt++;
@@ -81,7 +85,10 @@ void loop(){
           ok++;
         }
       n2++;
+    }else{
+      read_collisions++;
     }
+    t1=millis();
   }
   
   if (stringComplete) {
@@ -90,9 +97,13 @@ void loop(){
       Serial.print('/');
       Serial.print(CNT);
       Serial.println (" Valid transfers");
-      Serial.println (data_from_slave.id);
-      Serial.println (data_from_slave.action);
-      Serial.println (data_from_slave.data);
+      Serial.print(read_collisions);
+      Serial.println (" Read collisions");
+      Serial.print(write_collisions);
+      Serial.println (" Write collisions");
+//      Serial.println (data_from_slave.id);
+//      Serial.println (data_from_slave.action);
+//      Serial.println (data_from_slave.data);
     }
     // clear the string:
     inputString = "";
