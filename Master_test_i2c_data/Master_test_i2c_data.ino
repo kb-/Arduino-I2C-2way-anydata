@@ -5,7 +5,7 @@
 #include "I2C_Anything.h"
 
 #define CTRL_I2C_ADDR 12
-#define DT 250
+#define DT 20
 #define CNT 100000
 #define READ_LIM 10
 
@@ -72,9 +72,8 @@ void loop(){
       do{
         I2C_readAnything(data_from_slave);
         read_cnt++;
-        if(read_cnt==2)//still need this?
+        if(read_cnt>2)//still need this?
         {
-          read_cnt = 0;
           Serial.println ("read error break");
           break;
         }
@@ -82,10 +81,11 @@ void loop(){
   //    Serial.println (data_from_slave.id);
   //    Serial.println (data_from_slave.action);
   //    Serial.println (data_from_slave.data);
-        if(data_from_slave.id=='X'&&data_from_slave.action=='Z'&&data_from_slave.data==2500)
-        {
-          ok++;
-        }
+      read_cnt = 0;
+      if(data_from_slave.id=='X'&&data_from_slave.action=='Z'&&data_from_slave.data==2500)
+      {
+        ok++;
+      }
       n2++;
     }else{
       read_collisions++;

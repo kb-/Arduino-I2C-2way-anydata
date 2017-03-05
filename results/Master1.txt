@@ -1,0 +1,22 @@
+Master connected
+373/100000 Valid transfers
+1 Read collisions
+0 Write collisions
+719/100000 Valid transfers
+1 Read collisions
+0 Write collisions
+5916/100000 Valid transfers
+7 Read collisions
+6 Write collisions
+11908/100000 Valid transfers
+13 Read collisions
+9 Write collisions
+35539/100000 Valid transfers
+44 Read collisions
+22 Write collisions
+62255/100000 Valid transfers
+74 Read collisions
+37 Write collisions
+100000/100000 Valid transfers
+119 Read collisions
+49 Write collisions
