@@ -17,20 +17,19 @@ volatile ctrlcomdata data_to_Master;
 volatile bool data_ready=false;
 volatile uint32_t ok1=0;
 volatile uint32_t ok2=0;
-String inputString = "";         // a string to hold incoming data
-boolean stringComplete = false;  // whether the string is complete
+String inputString = "";                      // a string to hold incoming data
+boolean stringComplete = false;               // whether the string is complete
 
-//The setup function is called once at startup of the sketch
 void setup()
 {
-  pinMode(12, OUTPUT);//enable 12V
-  digitalWrite(12, LOW);//enable 12V
-	Serial.begin(115200);  // start serial for output
+  pinMode(12, OUTPUT);                        //set pin for 12V power supply
+  digitalWrite(12, LOW);                      //enable 12V power supply
+	Serial.begin(115200);                       // start serial for output
   inputString.reserve(2);
 	while (!Serial) {
 	; // wait for serial port to connect. Needed for native USB
 	}
-	Serial.println ("Arduino connected");
+	Serial.println ("Slave connected");
 	Wire.begin(CTRL_I2C_ADDR);        // join i2c bus
 	Wire.onReceive(receiveEvent);
   Wire.onRequest (requestEvent);
@@ -41,6 +40,9 @@ void loop(){
 //    Serial.println (data_from_Master.id);
 //    Serial.println (data_from_Master.action);
 //    Serial.println (data_from_Master.data);
+//Do something with received data here
+
+      //Check if valid data is transmitted (only for testing purpose)
       if(data_from_Master.id=='Z'&&data_from_Master.action=='e'&&data_from_Master.data==1500)
       {
         ok1++;
@@ -50,6 +52,8 @@ void loop(){
       }
     data_ready = false;
   }
+  
+  //report current transfer results when typing "r" + "return" keys in serial window
   if (stringComplete) {
     if(inputString=="r\r"){
       Serial.print(ok1);
@@ -67,7 +71,7 @@ void loop(){
 }
 
 void receiveEvent(int howMany) {
-  if(howMany==sizeof(ctrlcomdata)){//requestEvent is confused with data without this test
+  if(howMany==sizeof(ctrlcomdata)){           //check if the right data size is returned (filters out Wire library's misinterpreted requests)
     I2C_readAnything(data_from_Master);
     data_ready = true;
   }
@@ -75,17 +79,20 @@ void receiveEvent(int howMany) {
 
 void requestEvent(){
   static uint32_t t=0;
+  //set data for Master 1
   data_to_Master.data = 2500;
   data_to_Master.action = 'Z';
   I2C_singleWriteAnything(data_to_Master);
 //  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
+  //set data for Master 2
   data_to_Master.data = 3500;
   data_to_Master.action = 'Y';
   I2C_singleWriteAnything(data_to_Master);
-//  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));//we don't know which master is calling. Sending data fo both.
+//  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
+//we don't know which master is requesting. Sending data fo both.
 }
 
-
+//get serial commands
 void serialEvent() {
   while (Serial.available()) {
     // get the new byte:
