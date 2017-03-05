@@ -5,7 +5,7 @@
 #include "I2C_Anything.h"
 
 #define CTRL_I2C_ADDR 12
-#define DT 11
+#define DT 250
 #define CNT 100000
 #define READ_LIM 10
 
@@ -37,7 +37,7 @@ void setup(){
   }
   Serial.println ("Master connected");
 	Wire.begin();        // join i2c bus
-  Wire.setClock(400000);
+  Wire.setClock(100000);
   inputString.reserve(2);
 //	Wire.setClock(100000);
 }
@@ -49,20 +49,21 @@ void loop(){
   if ((millis()-t)>DT&&n1<CNT)//delay, without delay()
   {                           
     t=millis();
-  	Wire.beginTransmission (CTRL_I2C_ADDR);
-    I2C_singleWriteAnything(data_to_slave);
+    do{    
+    	Wire.beginTransmission (CTRL_I2C_ADDR);
+      I2C_singleWriteAnything(data_to_slave);
 //  	Wire.write ((uint8_t*) &data_to_slave, sizeof(ctrlcomdata));
-    do{
+
   	  status = Wire.endTransmission ();
       if(read_cnt1==READ_LIM)//give up to not hang code
       {
         read_cnt1 = 0;
         break;
       }
-      if(status==2||status==3){
+      if(status!=0){//if(status==2||status==3){
         write_collisions++;
       }
-    }while(status==2||status==3);//retry on collision
+    }while(status!=0);//retry on collision
     n1++;
   }
   if ((millis()-t1)>DT&&n2<CNT)//delay, without delay()
@@ -72,9 +73,10 @@ void loop(){
       do{
         I2C_readAnything(data_from_slave);
         read_cnt++;
-        if(read_cnt==READ_LIM)//still need this?
+        if(read_cnt==2)//still need this?
         {
           read_cnt = 0;
+          Serial.println ("read error break");
           break;
         }
       }while(data_from_slave.action!='Y');//reading till the expected data is delivered

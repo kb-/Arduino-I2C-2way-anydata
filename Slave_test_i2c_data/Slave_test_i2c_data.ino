@@ -77,10 +77,12 @@ void requestEvent(){
   static uint32_t t=0;
   data_to_Master.data = 2500;
   data_to_Master.action = 'Z';
-  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
+  I2C_singleWriteAnything(data_to_Master);
+//  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
   data_to_Master.data = 3500;
   data_to_Master.action = 'Y';
-  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));//we don't know which master is calling. Sending data fo both.
+  I2C_singleWriteAnything(data_to_Master);
+//  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));//we don't know which master is calling. Sending data fo both.
 }
 
 
