@@ -106,3 +106,8 @@ void serialEvent() {
     }
   }
 }
+
+//serial event for SAMD
+void serialEventRun(void){
+  if(Serial.available()) serialEvent();
+}
