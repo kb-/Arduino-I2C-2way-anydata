@@ -4,58 +4,216 @@
 #include <Wire.h>
 #include "I2C_Anything.h"
 
-#define CTRL_I2C_ADDR1 12
-#define CTRL_I2C_ADDR2 13
+//#define CTRL_I2C_ADDR 12  //slave's address
+#define MASTERS_CNT 1     //number of masters on the bus
+#define SLAVES_CNT 2     //number of slaves on the bus
+#define I2C_CLOCK 100000
+#define DT 10             //transfer interval(for low values, check how busy the bus is with a logic analyser)
+#define READ_LIM 10       //retries on read collision
+#define CNT 4000000        //number of transfers
 
-struct __attribute__ ((packed)) ctrlcomdata {
-	char id='Y';
-	char action='e';
-	int32_t data;
+#define PIN_RED_LED     (13)
+
+int i2c_addr[SLAVES_CNT] = {12,13};
+
+//transfered data structure
+struct __attribute__((packed)) ctrlcomdata{
+  char id='Z';//This master's name
+  char action='e';
+  int32_t data;
 };
 
+uint16_t dt = DT;
+uint32_t t=0;
+uint32_t t1=0;
+
+//for collision test
+uint32_t n1=0;
+uint32_t n2=0;
+uint32_t ok1=0;
+uint32_t ok2=0;
+uint32_t read_collisions = 0;
+uint32_t write_dataTooLong = 0;
+uint32_t write_NACK_Addr = 0;
+uint32_t write_NACK_Data = 0;
+uint32_t write_OtherErr = 0;
+uint32_t write_InfLoop = 0;
+uint8_t read_cnt = 0;
+uint8_t read_cnt1 = 0;
+uint8_t status;
+
+//for Serial input
+String inputString = "";         // a string to hold incoming data
+boolean stringComplete = false;  // whether the string is complete
+
+//LED
+int ledState = LOW;             // ledState used to set the LED
+unsigned long previousMillis = 0;        // will store last time LED was updated
+const long interval = 1000;           // interval at which to blink (milliseconds)
+
+
 ctrlcomdata data_from_slave;
+ctrlcomdata data_to_slave;
 
 void setup(){
-  Serial.begin(115200);  // start serial for output
-  while (!Serial) {
+  SerialUSB.begin(115200);  // start serial for output
+  while(!SerialUSB){
   ; // wait for serial port to connect.
   }
-  Serial.println ("Master connected");
+  SerialUSB.println("Master connected");
 	Wire.begin();        // join i2c bus
-	Wire.setClock(800000);
+  Wire.setClock(I2C_CLOCK);
+  inputString.reserve(2);
+  pinMode(PIN_RED_LED, OUTPUT);
 }
 
 void loop(){
-	ctrlcomdata data;
-  static uint32_t t=0;
-  if ((millis()-t)>2000)//delay, without delay()
-  {
-    t=millis();
-  	Wire.beginTransmission (CTRL_I2C_ADDR1);
-    data.id = 'Y';
-    data.data = millis();
-  	Wire.write ((uint8_t*) &data, sizeof(ctrlcomdata));
-  	Wire.endTransmission (true);
-    
-    Wire.beginTransmission (CTRL_I2C_ADDR2);
-    data.id = 'E';
-    data.data = millis();
-    Wire.write ((uint8_t*) &data, sizeof(ctrlcomdata));
-    Wire.endTransmission (true);
+  data_to_slave.data = 1500;  //set the data to transfer
+  for(int i=0; i<SLAVES_CNT;i++){
+    sendToSlave(data_to_slave,i2c_addr[i]);
+    getFromSlave(i2c_addr[i]);
+  }
+  
+  //report current transfer results when typing "r" + "return" keys in serial window
+  if(stringComplete){
+    if(inputString=="r\r"){
+      SerialUSB.print(ok1);
+      SerialUSB.print('/');
+      SerialUSB.print(CNT);
+      SerialUSB.println(" Valid transfers from slave 1");
+      SerialUSB.print(ok2);
+      SerialUSB.print('/');
+      SerialUSB.print(CNT);
+      SerialUSB.println(" Valid transfers from slave 2");
+      SerialUSB.print(read_collisions);
+      SerialUSB.println(" Read collisions");
+      SerialUSB.print(write_dataTooLong);
+      SerialUSB.println(" Write - Data too long");
+      SerialUSB.print(write_NACK_Addr);
+      SerialUSB.println(" Write - NACK on transmit of address");
+      SerialUSB.print(write_NACK_Data);
+      SerialUSB.println(" Write - NACK on transmit of data");
+      SerialUSB.print(write_OtherErr);
+      SerialUSB.println(" Write - Other error");
+      SerialUSB.print(write_InfLoop);
+      SerialUSB.println(" Write - Infinite loop");
+//      Serial.println(data_from_slave.id);
+//      Serial.println(data_from_slave.action);
+//      Serial.println(data_from_slave.data);
+    }
+    // clear the string:
+    inputString = "";
+    stringComplete = false;
   }
 
-  if (Wire.requestFrom(CTRL_I2C_ADDR1, sizeof(ctrlcomdata))){
-    I2C_readAnything(data_from_slave);
-    if(data_from_slave.id=='Y'){//empty or real data is flowing in continously, only keep real data
-      Serial.println (data_from_slave.id);
-      Serial.println (data_from_slave.data);
+  // blink the LED.
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+
+    // if the LED is off turn it on and vice-versa:
+    if (ledState == LOW) {
+      ledState = HIGH;
+    } else {
+      ledState = LOW;
+    }
+
+    // set the LED with the ledState of the variable:
+    digitalWrite(PIN_RED_LED, ledState);
+  }
+}
+
+void sendToSlave(ctrlcomdata data_to_slave, int addr){
+
+  if((millis()-t)>dt&&n1<CNT){//delay, without delay()
+      t=millis();
+      do{    
+        Wire.beginTransmission(addr);
+        I2C_singleWriteAnything(data_to_slave);  //Prepare transmssion to slave
+        // Wire.write((uint8_t*) &data_to_slave, sizeof(ctrlcomdata));
+
+        status = Wire.endTransmission();        //Send data and get transfer status
+        if(read_cnt1==READ_LIM){                //give up after too many retries, to not hang code
+          read_cnt1 = 0;
+          write_InfLoop++;
+          break;
+        }
+        if(status!=0){
+          if(status==1){                          //check transfer status
+            write_dataTooLong++;
+          }else if(status==2){
+            write_NACK_Addr++;
+          }else if(status==3){
+            write_NACK_Data++;
+          }else if(status==4){
+            write_OtherErr++;
+          }else if(status==5){
+            write_InfLoop++;
+          }
+        }    
+      }while(status!=0);                        //retry on collision
+      n1++;
+    }
+    // return t;
+}
+
+void getFromSlave(int addr){
+  if((millis()-t1)>dt&&n2<CNT)//delay, without delay()
+ {
+    if(Wire.requestFrom(addr, MASTERS_CNT*sizeof(data_from_slave))==MASTERS_CNT*sizeof(data_from_slave)){//request data from slave, cjeck if the right data size is returned (filters out Wire library's misinterpreted requests)
+      do{
+        I2C_readAnything(data_from_slave);
+        read_cnt++;
+        if(read_cnt>MASTERS_CNT){//still need this?
+          SerialUSB.println("read error break");
+          break;
+        }
+      }while(data_from_slave.action!='Z');    //reading till the expected data is delivered (data from slave is for all masters since there isn't a master address transmitted by requestFrom)
+      read_cnt = 0;
+  //    Serial.println(data_from_slave.id);
+  //    Serial.println(data_from_slave.action);
+  //    Serial.println(data_from_slave.data);
+  
+      //Check if valid data is transmitted (only for testing purpose)
+      if(data_from_slave.id=='X'&&data_from_slave.action=='Z'&&data_from_slave.data==2500){
+        ok1++;
+      }
+      if(data_from_slave.id=='Y'&&data_from_slave.action=='Z'&&data_from_slave.data==2500){
+        ok2++;
+      }
+      n2++;
+    }else{
+      read_collisions++;                      //count read collisions
+    }
+    t1=millis();
+    dt = DT+random(-5, 5);
+  }
+}
+
+//get serial commands
+void serialEvent(){
+  int se_cnt = 0;
+  while(SerialUSB.available()){
+    // get the new byte:
+    char inChar =(char)SerialUSB.read();
+    // add it to the inputString:
+    inputString += inChar;
+    // if the incoming character is a newline, set a flag
+    // so the main loop can do something about it:
+    if(inChar == '\r'){
+      stringComplete = true;
+    }
+    se_cnt++;
+    if(se_cnt>50){
+      se_cnt=0;
+      break;
     }
   }
-  if (Wire.requestFrom(CTRL_I2C_ADDR2, sizeof(ctrlcomdata))){
-    I2C_readAnything(data_from_slave);
-    if(data_from_slave.id=='E'){//empty or real data is flowing in continously, only keep real data
-      Serial.println (data_from_slave.id);
-      Serial.println (data_from_slave.data);
-    }
-  }
+}
+
+//serial event for SAMD
+void serialEventRun(void){
+  if(SerialUSB.available()) serialEvent();
 }
