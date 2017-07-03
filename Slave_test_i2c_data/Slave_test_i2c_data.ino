@@ -4,16 +4,19 @@
 #include <Wire.h>
 #include "I2C_Anything.h"
 
-#define CTRL_I2C_ADDR 12
+#define CTRL_I2C_ADDR 12  //slave address
+#define READ_LIM 10       //retries on read collision
 
 struct __attribute__ ((packed)) ctrlcomdata {
-  char id='X';
+  char from='X';
+  char to='M';
   char action='e';
   int32_t data;
 };
 
-volatile ctrlcomdata data_from_Master;
-volatile ctrlcomdata data_to_Master;
+ctrlcomdata data_from_Master;
+ctrlcomdata data_to_Master;
+
 volatile bool data_ready=false;
 volatile uint32_t ok1=0;
 volatile uint32_t ok2=0;
@@ -22,14 +25,12 @@ boolean stringComplete = false;               // whether the string is complete
 
 void setup()
 {
-  pinMode(12, OUTPUT);                        //set pin for 12V power supply
-  digitalWrite(12, LOW);                      //enable 12V power supply
-	SerialUSB.begin(115200);                       // start serial for output
+	Serial.begin(115200);                       // start serial for output
   inputString.reserve(2);
-	while (!SerialUSB) {
+	while (!Serial) {
 	; // wait for serial port to connect. Needed for native USB
 	}
-	SerialUSB.println ("Slave connected");
+	Serial.println ("Slave connected");
 	Wire.begin(CTRL_I2C_ADDR);        // join i2c bus
 	Wire.onReceive(receiveEvent);
   Wire.onRequest (requestEvent);
@@ -43,26 +44,22 @@ void loop(){
 //Do something with received data here
 
       //Check if valid data is transmitted (only for testing purpose)
-      if(data_from_Master.id=='Z'&&data_from_Master.action=='e'&&data_from_Master.data==1500)
-      {
-        ok1++;
-      // }else if(data_from_Master.id=='Y'&&data_from_Master.action=='e'&&data_from_Master.data==2000)
-      // {
-        // ok2++;
-      }
+    if(data_from_Master.from=='M'&&data_from_Master.action=='e')
+    {
+      ok1++;
+    }
     data_ready = false;
   }
   
   //report current transfer results when typing "r" + "return" keys in serial window
   if (stringComplete) {
     if(inputString=="r\r"){
-      SerialUSB.print(ok1);
-      SerialUSB.println (" Valid transfers from m1");
-      // Serial.print(ok2);
-      // Serial.println (" Valid transfers from m2"); 
-//      Serial.println (data_from_Master.id);
-//      Serial.println (data_from_Master.action);
-//      Serial.println (data_from_Master.data);    
+      Serial.print(ok1);
+      Serial.println (" Valid transfers from master");
+      Serial.println (data_from_Master.from);
+      Serial.println (data_from_Master.to);
+      Serial.println (data_from_Master.action);
+      Serial.println (data_from_Master.data);   
     }
     // clear the string:
     inputString = "";
@@ -83,20 +80,12 @@ void requestEvent(){
   data_to_Master.data = 2500;
   data_to_Master.action = 'Z';
   I2C_singleWriteAnything(data_to_Master);
-//  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
-  //set data for Master 2
-  // data_to_Master.data = 3500;
-  // data_to_Master.action = 'Y';
-  // I2C_singleWriteAnything(data_to_Master);
-//  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
-//we don't know which master is requesting. Sending data fo both.
-}
 
 //get serial commands
 void serialEvent() {
-  while (SerialUSB.available()) {
+  while (Serial.available()) {
     // get the new byte:
-    char inChar = (char)SerialUSB.read();
+    char inChar = (char)Serial.read();
     // add it to the inputString:
     inputString += inChar;
     // if the incoming character is a newline, set a flag
@@ -107,7 +96,7 @@ void serialEvent() {
   }
 }
 
-//serial event for SAMD
+//serial event for SAMD, remove on AVR
 void serialEventRun(void){
-  if(SerialUSB.available()) serialEvent();
+  if(Serial.available()) serialEvent();
 }

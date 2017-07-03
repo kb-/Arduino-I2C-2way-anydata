@@ -4,16 +4,19 @@
 #include <Wire.h>
 #include "I2C_Anything.h"
 
-#define CTRL_I2C_ADDR 13
+#define CTRL_I2C_ADDR 13  //slave address
+#define READ_LIM 10       //retries on read collision
 
 struct __attribute__ ((packed)) ctrlcomdata {
-  char id='Y';
+  char from='Y';
+  char to='M';
   char action='e';
   int32_t data;
 };
 
-volatile ctrlcomdata data_from_Master;
-volatile ctrlcomdata data_to_Master;
+ctrlcomdata data_from_Master;
+ctrlcomdata data_to_Master;
+
 volatile bool data_ready=false;
 volatile uint32_t ok1=0;
 volatile uint32_t ok2=0;
@@ -22,8 +25,6 @@ boolean stringComplete = false;               // whether the string is complete
 
 void setup()
 {
-  pinMode(12, OUTPUT);                        //set pin for 12V power supply
-  digitalWrite(12, LOW);                      //enable 12V power supply
 	Serial.begin(115200);                       // start serial for output
   inputString.reserve(2);
 	while (!Serial) {
@@ -43,13 +44,10 @@ void loop(){
 //Do something with received data here
 
       //Check if valid data is transmitted (only for testing purpose)
-      if(data_from_Master.id=='Z'&&data_from_Master.action=='e'&&data_from_Master.data==1500)
-      {
-        ok1++;
-      // }else if(data_from_Master.id=='Y'&&data_from_Master.action=='e'&&data_from_Master.data==2000)
-      // {
-        // ok2++;
-      }
+    if(data_from_Master.from=='M'&&data_from_Master.action=='e')
+    {
+      ok1++;
+    }
     data_ready = false;
   }
   
@@ -57,12 +55,11 @@ void loop(){
   if (stringComplete) {
     if(inputString=="r\r"){
       Serial.print(ok1);
-      Serial.println (" Valid transfers from m1");
-      // Serial.print(ok2);
-      // Serial.println (" Valid transfers from m2"); 
-//      Serial.println (data_from_Master.id);
-//      Serial.println (data_from_Master.action);
-//      Serial.println (data_from_Master.data);    
+      Serial.println (" Valid transfers from master");
+      Serial.println (data_from_Master.from);
+      Serial.println (data_from_Master.to);
+      Serial.println (data_from_Master.action);
+      Serial.println (data_from_Master.data);   
     }
     // clear the string:
     inputString = "";
@@ -83,14 +80,6 @@ void requestEvent(){
   data_to_Master.data = 2500;
   data_to_Master.action = 'Z';
   I2C_singleWriteAnything(data_to_Master);
-//  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
-  //set data for Master 2
-  // data_to_Master.data = 3500;
-  // data_to_Master.action = 'Y';
-  // I2C_singleWriteAnything(data_to_Master);
-//  Wire.write ((uint8_t*) &data_to_Master, sizeof(ctrlcomdata));
-//we don't know which master is requesting. Sending data fo both.
-}
 
 //get serial commands
 void serialEvent() {
@@ -107,7 +96,7 @@ void serialEvent() {
   }
 }
 
-//serial event for SAMD
+//serial event for SAMD, remove on AVR
 void serialEventRun(void){
   if(Serial.available()) serialEvent();
 }
