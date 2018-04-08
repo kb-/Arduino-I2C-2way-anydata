@@ -51,11 +51,11 @@ ctrlcomdata data_from_slave;
 ctrlcomdata data_to_slave;
 
 void setup(){
-  Serial.begin(115200);  // start serial for output
-  while(!Serial){
+  SerialUSB.begin(115200);  // start serial for output
+  while(!SerialUSB){
   ; // wait for serial port to connect.
   }
-  Serial.println("Master connected");
+  SerialUSB.println("Master connected Z");
 	Wire.begin();        // join i2c bus
   Wire.setClock(I2C_CLOCK);
   inputString.reserve(2);
@@ -103,7 +103,7 @@ void loop(){
         I2C_readAnything(data_from_slave);
         read_cnt++;
         if(read_cnt>MASTERS_CNT){//still need this?
-          Serial.println("read error break");
+          SerialUSB.println("read error break");
           break;
         }
       }while(data_from_slave.action!='Z');    //reading till the expected data is delivered (data from slave is for all masters since there isn't a master address transmitted by requestFrom)
@@ -128,22 +128,22 @@ random(-5, 5);
   //report current transfer results when typing "r" + "return" keys in serial window
   if(stringComplete){
     if(inputString=="r\r"){
-      Serial.print(ok);
-      Serial.print('/');
-      Serial.print(CNT);
-      Serial.println(" Valid transfers");
-      Serial.print(read_collisions);
-      Serial.println(" Read collisions");
-      Serial.print(write_dataTooLong);
-      Serial.println(" Write - Data too long");
-      Serial.print(write_NACK_Addr);
-      Serial.println(" Write - NACK on transmit of address");
-      Serial.print(write_NACK_Data);
-      Serial.println(" Write - NACK on transmit of data");
-      Serial.print(write_OtherErr);
-      Serial.println(" Write - Other error");
-      Serial.print(write_InfLoop);
-      Serial.println(" Write - Infinite loop");
+      SerialUSB.print(ok);
+      SerialUSB.print('/');
+      SerialUSB.print(CNT);
+      SerialUSB.println(" Valid transfers");
+      SerialUSB.print(read_collisions);
+      SerialUSB.println(" Read collisions");
+      SerialUSB.print(write_dataTooLong);
+      SerialUSB.println(" Write - Data too long");
+      SerialUSB.print(write_NACK_Addr);
+      SerialUSB.println(" Write - NACK on transmit of address");
+      SerialUSB.print(write_NACK_Data);
+      SerialUSB.println(" Write - NACK on transmit of data");
+      SerialUSB.print(write_OtherErr);
+      SerialUSB.println(" Write - Other error");
+      SerialUSB.print(write_InfLoop);
+      SerialUSB.println(" Write - Infinite loop");
 //      Serial.println(data_from_slave.id);
 //      Serial.println(data_from_slave.action);
 //      Serial.println(data_from_slave.data);
@@ -175,9 +175,9 @@ random(-5, 5);
 //get serial commands
 void serialEvent(){
   int se_cnt = 0;
-  while(Serial.available()){
+  while(SerialUSB.available()){
     // get the new byte:
-    char inChar =(char)Serial.read();
+    char inChar =(char)SerialUSB.read();
     // add it to the inputString:
     inputString += inChar;
     // if the incoming character is a newline, set a flag
@@ -195,5 +195,5 @@ void serialEvent(){
 
 //serial event for SAMD
 void serialEventRun(void){
-  if(Serial.available()) serialEvent();
+  if(SerialUSB.available()) serialEvent();
 }
