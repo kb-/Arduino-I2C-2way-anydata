@@ -9,7 +9,7 @@
 #define I2C_CLOCK 100000
 #define DT 10             //transfer interval(for low values, check how busy the bus is with a logic analyser)
 #define READ_LIM 10       //retries on read collision
-#define CNT 1000000        //number of transfers
+#define CNT 4000000        //number of transfers
 
 #define PIN_RED_LED     (13)
 
